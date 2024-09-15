@@ -13,7 +13,6 @@ This project implements a Convolutional Neural Network (CNN) on the MNIST datase
   - [Resuming from Checkpoint](#resuming-from-checkpoint)
 - [Training Script Arguments](#Training-Script-Arguments)
 - [Model Architecture](#model-architecture)
-- [Testing](#Testing)
 - [Results](#results)
 
 ## Overview
