@@ -202,6 +202,183 @@ Each instruction (e.g., `FROM`, `COPY`, `RUN`) creates a layer. Layers optimize 
 
 This Dockerfile demonstrates how to set up a Python application in a lightweight container. By understanding concepts like layers, `ADD` vs `COPY`, and `CMD` vs `ENTRYPOINT`, you can build efficient, reusable Docker images while following best practices.  
 
+## **Dockerfile with Signal Handling**  
+
+Let’s break down this Dockerfile and the Python script `main.py` that handles signals gracefully, along with key concepts about Docker signals.  
+
+### **Dockerfile**  
+```dockerfile  
+FROM python:3.7.13-alpine  
+
+# Copy the Python script into the container  
+COPY main.py main.py  
+
+# Define the default command to execute  
+CMD ./main.py  
+
+# Send SIGINT instead of SIGTERM when stopping the container  
+STOPSIGNAL SIGINT  
+```  
+
+
+
+### **`main.py`**  
+The `main.py` script is designed to handle system signals like `SIGTERM` and `SIGINT`.  
+
+```python  
+#!/usr/local/bin/python3 -u  
+import sys  
+import signal  
+import time  
+
+# Define the signal handler function  
+def signal_handler(signum, frame):  
+    print(f"Gracefully shutting down after receiving signal {signum}")  
+    sys.exit(0)  
+
+if __name__ == "__main__":  
+    # Attach signal handlers for SIGTERM and SIGINT  
+    signal.signal(signal.SIGTERM, signal_handler)  
+    signal.signal(signal.SIGINT, signal_handler)  
+
+    # Simulate work in a loop  
+    while True:  
+        time.sleep(0.5)  # Simulating some task  
+        print("Interrupt me")  
+```  
+
+
+
+### **Running and Handling Signals**  
+
+1. **Building the Docker Image**:  
+   Run the following command to build the image:  
+   ```bash  
+   docker build -t signal-handling-example .  
+   ```  
+
+2. **Running the Container**:  
+   Start the container:  
+   ```bash  
+   docker run signal-handling-example  
+   ```  
+
+3. **Stopping the Container Gracefully**:  
+   Use `docker stop` to send a **`SIGTERM`** signal (or `SIGINT` as defined by `STOPSIGNAL` in the Dockerfile):  
+   ```bash  
+   docker stop <container_id>  
+   ```  
+   The container will terminate gracefully, and you’ll see the message:  
+   ```
+   Gracefully shutting down after receiving signal 15  
+   ```  
+
+4. **Forcefully Killing the Container**:  
+   Use `docker kill` to send a **`SIGKILL`** signal, which terminates the container immediately without cleanup:  
+   ```bash  
+   docker kill <container_id>  
+   ```  
+   The exit status will be `137` (128 + 9, where `9` is the `SIGKILL` signal).  
+
+
+### **`STOPSIGNAL` in Docker**  
+
+The `STOPSIGNAL` instruction in the Dockerfile allows you to customize the signal sent when stopping the container.  
+
+- **Default Behavior**:  
+   By default, `docker stop` sends a `SIGTERM` signal.  
+- **Customizing with `STOPSIGNAL`**:  
+   Adding the following line in the Dockerfile changes the default signal to `SIGINT`:  
+   ```dockerfile  
+   STOPSIGNAL SIGINT  
+   ```  
+   Now, when stopping the container, it will send `SIGINT` instead of `SIGTERM`, ensuring proper handling by Python.  
+
+
+
+### **Sending Custom Signals**  
+
+You can send any signal to a container using the `docker kill` command with the `--signal` flag.  
+
+- Send `SIGTERM`:  
+   ```bash  
+   docker kill --signal=SIGTERM <container_id>  
+   ```  
+
+- Send `SIGINT`:  
+   ```bash  
+   docker kill --signal=SIGINT <container_id>  
+   ```  
+
+
+
+### **Common Signals in Docker**  
+
+<table>
+  <thead>
+    <tr>
+      <th>Signal Name</th>
+      <th>Signal Number</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>SIGHUP</td>
+      <td>1</td>
+      <td>Hang up detected on the controlling terminal.</td>
+    </tr>
+    <tr>
+      <td>SIGINT</td>
+      <td>2</td>
+      <td>Issued when the user sends an interrupt (Ctrl + C).</td>
+    </tr>
+    <tr>
+      <td>SIGQUIT</td>
+      <td>3</td>
+      <td>Issued when the user sends a quit signal (Ctrl + D).</td>
+    </tr>
+    <tr>
+      <td>SIGFPE</td>
+      <td>8</td>
+      <td>Issued for illegal mathematical operations.</td>
+    </tr>
+    <tr>
+      <td>SIGKILL</td>
+      <td>9</td>
+      <td>Immediately terminates the process without cleanup.</td>
+    </tr>
+    <tr>
+      <td>SIGALRM</td>
+      <td>14</td>
+      <td>Alarm clock signal (used for timers).</td>
+    </tr>
+    <tr>
+      <td>SIGTERM</td>
+      <td>15</td>
+      <td>Default termination signal (sent by `docker stop`).</td>
+    </tr>
+  </tbody>
+</table>
+
+
+### **Best Practices for Signal Handling in Docker**  
+
+1. Graceful Shutdown:  
+   - Python applications should handle `SIGTERM` or `SIGINT` gracefully to clean up resources and exit properly.  
+
+2. Use `STOPSIGNAL`:  
+   - Customize the default stop signal in the Dockerfile to align with your application’s requirements.  
+
+3. Avoid Forceful Termination (`SIGKILL`):  
+   - Only use `docker kill` when absolutely necessary, as it doesn’t allow the application to perform cleanup.  
+
+4. Version Pinning:  
+   - Always specify exact versions in the Dockerfile (e.g., `python:3.7.13-alpine`) to ensure reproducibility.  
+
+
+refer to the [Dockerfile complete syntax guide](https://docs.docker.com/engine/reference/builder/).  
+
 
 
 # Dockerized Deep Learning for MNIST Digit Classification with PyTorch
