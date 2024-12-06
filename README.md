@@ -1,3 +1,209 @@
+**Introduction to Docker and Containerization**  
+
+Containers are portable, lightweight, and efficient tools for application deployment. Unlike virtual machines, they allow multiple isolated environments to run on a single host operating system (OS), often supporting hundreds or thousands of containers simultaneously. By decoupling software from its runtime environment, containers enable developers to build applications on one OS, such as Linux, and deploy them seamlessly on another, like Windows, without facing configuration issues.  
+
+Docker is a platform that simplifies the creation, provisioning, and execution of containers. A container bundles an application with everything it needs to run, including libraries, configuration files, and dependencies. Instead of requiring separate operating systems for each application, containers share the underlying OS services of the host system, making them highly resource-efficient.  
+
+
+**How Containers Differ from Virtual Machines?**  
+Unlike virtual machines (VMs), which include a full operating system along with the application and its dependencies, containers share the host OS kernel. This makes containers much lighter and faster to start compared to VMs, which require hardware-level virtualization and more resources. Containers focus on isolating applications, while VMs isolate entire operating systems.
+
+
+
+**Docker Installation Guide**  
+
+To get started with Docker, follow the installation instructions based on your operating system:  
+
+- **macOS and Windows**: Install Docker Desktop using the official guide [here](https://docs.docker.com/engine/install/).  
+- **Linux**: Follow the instructions for your distribution, such as [Ubuntu](https://docs.docker.com/engine/install/ubuntu/).  
+
+If you're using Windows, it's recommended to enable **Windows Subsystem for Linux (WSL)** for better performance and compatibility. Learn more about WSL integration [here](https://docs.docker.com/desktop/windows/wsl/).  
+
+**Fixing Permissions on Linux**  
+To avoid permission issues when running Docker commands on Linux, add your user to the Docker group:  
+
+```bash
+sudo usermod -aG docker $USER
+```  
+
+**Testing Docker with "Hello World"**  
+Run the following command to verify your Docker installation: 
+ 
+```bash
+docker run hello-world
+```  
+
+This will download and execute a simple Docker image, confirming that Docker is set up correctly.  
+
+**Experiment with Docker Online**  
+You can try Docker without installing it by using the **Play With Docker** platform: [Play With Docker](https://labs.play-with-docker.com/).  
+
+**Running an Ubuntu Container**  
+To launch an interactive Ubuntu container, use:  
+```bash
+docker run -it ubuntu bash
+```  
+The `-it` flag enables interactive mode, allowing you to access the Ubuntu container's command line directly.
+
+**Docker from Scratch**  
+
+To deeply understand Docker and containers, you can explore how to build containers from scratch. Check out this resource: [Containers From Scratch](https://github.com/satyajitghana/containers-from-scratch).  
+
+
+**What Are Containers?**  
+
+A **container** is a lightweight, standalone, and executable unit of software that includes everything needed to run an application: the code, runtime, libraries, and dependencies. Containers are created from images and can be managed using the Docker API or CLI.  
+
+With containers, you can:  
+- Create, start, stop, move, or delete instances.  
+- Connect containers to networks or attach storage volumes.  
+- Build new images based on a container's current state.  
+
+Containers are isolated by default, meaning their network, storage, and subsystems are separate from the host machine and other containers. However, you can configure the level of isolation based on your needs.  
+
+
+
+**Docker Architecture**  
+
+Docker operates using a **client-server architecture**:  
+
+1. **Docker Client**: This is the interface used to interact with Docker. Commands like `docker run` or `docker build` are sent from the client to the daemon.  
+2. **Docker Daemon**: The daemon handles the heavy lifting of building, running, and managing containers.  
+3. **Communication**: The client and daemon communicate using a REST API over UNIX sockets or network interfaces.  
+
+
+**Docker Compose** is another client that helps manage multi-container applications. It allows you to define and run applications consisting of multiple interconnected containers.
+
+
+### **Understanding the Dockerfile**  
+
+Let’s break down the following Dockerfile and understand its key concepts:
+
+```dockerfile  
+# Our base image  
+FROM python:3.10.5-alpine  
+
+# Set working directory inside the image  
+WORKDIR /app  
+
+# Copy our requirements  
+COPY requirements.txt requirements.txt  
+
+# Install dependencies  
+RUN pip3 install -r requirements.txt  
+
+# Copy this folder's contents to the image  
+COPY . .  
+
+# Tell the port number the container should expose  
+EXPOSE 5000  
+```  
+
+
+#### **Dockerfile Layers**  
+
+Every instruction in the Dockerfile creates a **layer**. Layers are intermediate images that store changes compared to the previous state of the image.  
+
+1. **`FROM python:3.10.5-alpine`**:  
+   - This is the **base image** layer. It provides a lightweight Python 3.10.5 environment optimized for Alpine Linux.  
+2. **`WORKDIR /app`**:  
+   - Sets the working directory inside the container to `/app`. Any subsequent commands like `COPY` or `RUN` will be executed relative to this directory.  
+3. **`COPY requirements.txt requirements.txt`**:  
+   - Adds the `requirements.txt` file from the local system to the container’s `/app` directory.  
+4. **`RUN pip3 install -r requirements.txt`**:  
+   - Installs the Python dependencies listed in the `requirements.txt` file. This forms another layer storing the installed packages.  
+5. **`COPY . .`**:  
+   - Copies all the files from the current directory on the host machine into the container’s `/app` directory.  
+6. **`EXPOSE 5000`**:  
+   - Informs Docker that the container will listen on port `5000`. This doesn’t automatically map the port but acts as documentation for users.  
+
+
+
+### **Key Concepts**  
+
+#### **Layers in Dockerfile**  
+
+Each instruction (e.g., `FROM`, `COPY`, `RUN`) creates a layer. Layers optimize the build process by reusing unchanged layers when the Dockerfile is re-built. Think of it like saving "checkpoints" during a build process.  
+
+
+
+#### **`ADD` vs `COPY`**  
+
+- **`COPY`**: Used for basic file copying from the local machine to the container.  
+   - Example:  
+     ```dockerfile  
+     COPY requirements.txt requirements.txt  
+     ```  
+
+- **`ADD`**: Provides extra functionality, such as extracting `.tar` files or downloading files from a URL.  
+   - Example:  
+     ```dockerfile  
+     ADD myfiles.tar.xz /app  
+     ```  
+
+   **Best Practice**: Use `COPY` for simple file operations and `ADD` only when additional features are required.  
+
+
+
+#### **`CMD` vs `ENTRYPOINT`**  
+
+- **`CMD`**:  
+   - Specifies the **default command** to execute when the container starts.  
+   - Example:  
+     ```dockerfile  
+     CMD ["python", "app.py"]  
+     ```  
+   - This executes the Python script `app.py` as the default.  
+
+- **`ENTRYPOINT`**:  
+   - Specifies the **command that will always run** when the container starts.  
+   - Example:  
+     ```dockerfile  
+     ENTRYPOINT ["python"]  
+     CMD ["app.py"]  
+     ```  
+   - This sets `python` as the main executable, with `app.py` as the default argument.  
+
+   **Best Practice**: Use `ENTRYPOINT` for fixed commands and `CMD` for configurable arguments.  
+
+
+
+#### **Exec Form vs Shell Form**  
+
+- **Exec Form**: Directly specifies the executable and its arguments as a JSON array.  
+   - Example:  
+     ```dockerfile  
+     CMD ["python", "app.py"]  
+     ```  
+   - Advantages: Signals like `CTRL-C` (SIGINT) are correctly passed to the running process, ensuring graceful termination.  
+
+- **Shell Form**: Runs commands through a shell (e.g., `/bin/sh -c`).  
+   - Example:  
+     ```dockerfile  
+     CMD python app.py  
+     ```  
+   - Limitation: Shells often don’t forward signals, causing issues with process management.  
+
+   **Best Practice**: Always use **exec form** to ensure proper signal handling.  
+
+
+#### **`docker stop` vs `docker kill`**  
+
+- **`docker stop`**:  
+   - Sends a `SIGTERM` signal to the process, allowing it to shut down gracefully.  
+   - Example: Python applications can catch a `KeyboardInterrupt` and clean up resources.  
+
+- **`docker kill`**:  
+   - Sends a `SIGKILL` signal, immediately terminating the process without cleanup.  
+
+   **Best Practice**: Use `stop` whenever possible to allow the application to exit cleanly.  
+  
+ 
+
+This Dockerfile demonstrates how to set up a Python application in a lightweight container. By understanding concepts like layers, `ADD` vs `COPY`, and `CMD` vs `ENTRYPOINT`, you can build efficient, reusable Docker images while following best practices.  
+
+
+
 # Dockerized Deep Learning for MNIST Digit Classification with PyTorch
 
 
